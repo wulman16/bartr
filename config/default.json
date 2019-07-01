@@ -1,3 +1,4 @@
 {
-  "mongoURI": "mongodb+srv://will123:will123@cluster0-lsbei.mongodb.net/test?retryWrites=true&w=majority"
+  "mongoURI": "mongodb+srv://will123:will123@cluster0-lsbei.mongodb.net/test?retryWrites=true&w=majority",
+  "jwtSecret": "thisshitisbananas"
 }
