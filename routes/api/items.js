@@ -50,4 +50,37 @@ router.post(
   }
 );
 
+// @route     GET api/items
+// @desc      Get everyone else's items
+// @access    Private
+router.get(`/`, auth, async (req, res) => {
+  try {
+    const items = await Item.find().sort({ date: -1 });
+    res.json(items);
+  } catch (e) {
+    console.error(e.message);
+    res.status(500).send(`Server error!`);
+  }
+});
+
+// @route     GET api/items/:id
+// @desc      Get item by id
+// @access    Private
+router.get(`/:id`, auth, async (req, res) => {
+  try {
+    const item = await Item.findById(req.params.id);
+    if (!item) {
+      return res.status(404).json({ msg: `Item not found!` });
+    }
+
+    res.json(item);
+  } catch (e) {
+    console.error(e.message);
+    if (e.kind === `ObjectId`) {
+      return res.status(404).json({ msg: `Item not found!` });
+    }
+    res.status(500).send(`Server error!`);
+  }
+});
+
 module.exports = router;
