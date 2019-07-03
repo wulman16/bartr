@@ -158,4 +158,22 @@ router.get(`/:id`, async (req, res) => {
   }
 });
 
+// @route     DELETE api/users/me
+// @desc      Delete your account and your items
+// @access    Private
+router.delete(`/me`, auth, async (req, res) => {
+  try {
+    // TODO: remove user's items as well
+    await User.findByIdAndDelete(req.user.id);
+    res.send(req.user);
+  } catch (e) {
+    console.error(e.message);
+    if (e.kind === `ObjectId`) {
+      return res.status(400).json({ msg: `User cannot be found!` });
+    }
+    console.error(e.message);
+    res.status(500).send(`Server error!`);
+  }
+});
+
 module.exports = router;
