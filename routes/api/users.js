@@ -8,22 +8,6 @@ const config = require(`config`);
 const { check, validationResult } = require(`express-validator`);
 const User = require(`../../models/User`);
 
-// @route     GET api/users/me
-// @desc      Get current user's profile
-// @access    Private
-router.get(`/me`, auth, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id).select(`-password`);
-    if (!user) {
-      return res.status(400).json({ msg: `User cannot be found!` });
-    }
-    res.json(user);
-  } catch (e) {
-    console.error(e.message);
-    res.status(500).send(`Server error!`);
-  }
-});
-
 // @route     POST api/users
 // @desc      Register user
 // @access    Public
@@ -98,5 +82,80 @@ router.post(
     }
   }
 );
+
+// @route     GET api/users/me
+// @desc      Get current user's profile
+// @access    Private
+router.get(`/me`, auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select(`-password`);
+    if (!user) {
+      return res.status(400).json({ msg: `User cannot be found!` });
+    }
+    res.json(user);
+  } catch (e) {
+    console.error(e.message);
+    res.status(500).send(`Server error!`);
+  }
+});
+
+// @route     PATCH api/users/me
+// @desc      Edit logged-in user's profile
+// @access    Private
+router.patch(`/me`, auth, async (req, res) => {
+  const updates = Object.keys(req.body);
+  const allowedUpdates = [`name`, `email`, `location`];
+  const isValidOperation = updates.every(update => {
+    return allowedUpdates.includes(update);
+  });
+
+  if (!isValidOperation) {
+    return res.status(400).json({ msg: `Invalid updates!` });
+  }
+
+  try {
+    const user = await User.findById(req.user.id).select(`-password`);
+    updates.forEach(update => (user[update] = req.body[update]));
+    await user.save();
+    res.json(user);
+  } catch (e) {
+    console.error(e.message);
+    res.status(500).send(`Server error!`);
+  }
+});
+
+// @route     GET api/users
+// @desc      Get all profiles
+// @access    Public
+router.get(`/`, async (req, res) => {
+  try {
+    const users = await User.find().select(`name avatar location`);
+    res.json(users);
+  } catch (e) {
+    console.error(e.message);
+    res.status(500).send(`Server error!`);
+  }
+});
+
+// @route     GET api/users/:id
+// @desc      Get profile by user id
+// @access    Public
+router.get(`/:id`, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select(
+      `name avatar location`
+    );
+    if (!user) {
+      return res.status(400).json({ msg: `User cannot be found!` });
+    }
+    res.json(user);
+  } catch (e) {
+    console.error(e.message);
+    if (e.kind === `ObjectId`) {
+      return res.status(400).json({ msg: `User cannot be found!` });
+    }
+    res.status(500).send(`Server error!`);
+  }
+});
 
 module.exports = router;
