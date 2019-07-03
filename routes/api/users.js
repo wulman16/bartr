@@ -1,11 +1,28 @@
 const express = require(`express`);
 const router = express.Router();
+const auth = require(`../../middleware/auth`);
 const gravatar = require(`gravatar`);
 const bcrypt = require(`bcryptjs`);
 const jwt = require(`jsonwebtoken`);
 const config = require(`config`);
 const { check, validationResult } = require(`express-validator`);
 const User = require(`../../models/User`);
+
+// @route     GET api/users/me
+// @desc      Get current user's profile
+// @access    Private
+router.get(`/me`, auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select(`-password`);
+    if (!user) {
+      return res.status(400).json({ msg: `User cannot be found!` });
+    }
+    res.json(user);
+  } catch (e) {
+    console.error(e.message);
+    res.status(500).send(`Server error!`);
+  }
+});
 
 // @route     POST api/users
 // @desc      Register user
@@ -20,7 +37,8 @@ router.post(
     check(
       `password`,
       `Please enter a password with 6 or more characters`
-    ).isLength({ min: 6 })
+    ).isLength({ min: 6 }),
+    check(`location`, `Location is required`)
   ],
   async (req, res) => {
     const errors = validationResult(req);
