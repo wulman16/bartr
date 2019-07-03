@@ -55,7 +55,8 @@ router.post(
 // @access    Private
 router.get(`/`, auth, async (req, res) => {
   try {
-    const items = await Item.find().sort({ date: -1 });
+    let items = await Item.find().sort({ date: -1 });
+    items = items.filter(item => item.user.toString() !== req.user.id);
     res.json(items);
   } catch (e) {
     console.error(e.message);
@@ -74,6 +75,31 @@ router.get(`/:id`, auth, async (req, res) => {
     }
 
     res.json(item);
+  } catch (e) {
+    console.error(e.message);
+    if (e.kind === `ObjectId`) {
+      return res.status(404).json({ msg: `Item not found!` });
+    }
+    res.status(500).send(`Server error!`);
+  }
+});
+
+// @route     DELETE api/items/:id
+// @desc      Delete item by id
+// @access    Private
+router.delete(`/:id`, auth, async (req, res) => {
+  try {
+    const item = await Item.findById(req.params.id);
+    if (!item) {
+      return res.status(404).json({ msg: `Item not found!` });
+    }
+
+    if (item.user.toString() !== req.user.id) {
+      return res.status(401).json({ msg: `User not authorized` });
+    }
+
+    await item.remove();
+    res.json({ msg: `Ìtem removed!` });
   } catch (e) {
     console.error(e.message);
     if (e.kind === `ObjectId`) {
