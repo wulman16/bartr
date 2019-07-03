@@ -99,31 +99,6 @@ router.get(`/me`, auth, async (req, res) => {
   }
 });
 
-// @route     PATCH api/users/me
-// @desc      Edit logged-in user's profile
-// @access    Private
-router.patch(`/me`, auth, async (req, res) => {
-  const updates = Object.keys(req.body);
-  const allowedUpdates = [`name`, `email`, `location`];
-  const isValidOperation = updates.every(update => {
-    return allowedUpdates.includes(update);
-  });
-
-  if (!isValidOperation) {
-    return res.status(400).json({ msg: `Invalid updates!` });
-  }
-
-  try {
-    const user = await User.findById(req.user.id).select(`-password`);
-    updates.forEach(update => (user[update] = req.body[update]));
-    await user.save();
-    res.json(user);
-  } catch (e) {
-    console.error(e.message);
-    res.status(500).send(`Server error!`);
-  }
-});
-
 // @route     GET api/users
 // @desc      Get all profiles
 // @access    Public
@@ -158,6 +133,31 @@ router.get(`/:id`, async (req, res) => {
   }
 });
 
+// @route     PATCH api/users/me
+// @desc      Edit logged-in user's profile
+// @access    Private
+router.patch(`/me`, auth, async (req, res) => {
+  const updates = Object.keys(req.body);
+  const allowedUpdates = [`name`, `email`, `location`];
+  const isValidOperation = updates.every(update => {
+    return allowedUpdates.includes(update);
+  });
+
+  if (!isValidOperation) {
+    return res.status(400).json({ msg: `Invalid updates!` });
+  }
+
+  try {
+    const user = await User.findById(req.user.id).select(`-password`);
+    updates.forEach(update => (user[update] = req.body[update]));
+    await user.save();
+    res.json(user);
+  } catch (e) {
+    console.error(e.message);
+    res.status(500).send(`Server error!`);
+  }
+});
+
 // @route     DELETE api/users/me
 // @desc      Delete your account and your items
 // @access    Private
@@ -165,7 +165,7 @@ router.delete(`/me`, auth, async (req, res) => {
   try {
     // TODO: remove user's items as well
     await User.findByIdAndDelete(req.user.id);
-    res.send(req.user);
+    res.json(req.user);
   } catch (e) {
     console.error(e.message);
     if (e.kind === `ObjectId`) {
