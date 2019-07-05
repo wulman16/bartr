@@ -96,10 +96,10 @@ router.patch(`/:id`, auth, async (req, res) => {
     return allowedUpdates.includes(update);
   });
 
+  // Check that swap is only being approved or rejected, not both
   if (!isValidOperation) {
     return res.status(400).json({ msg: `Invalid updates!` });
   }
-
   if (updates.length > 1) {
     return res
       .status(400)
@@ -111,13 +111,19 @@ router.patch(`/:id`, auth, async (req, res) => {
     if (!swap) {
       return res.status(404).json({ msg: `Item not found!` });
     }
+
+    // Check that the correct user is approving or rejecting the swap
     if (swap.item1User.toString() !== req.user.id) {
       return res.status(401).json({ msg: `User not authorized!` });
     }
+
+    // Check that the swap is still pending
     if (!swap.pending) {
       return res.status(401).json({ msg: `Swap is already closed!` });
     }
     updates.forEach(update => (swap[update] = req.body[update]));
+
+    // Update each item's owner and location if the swap is approved
     if (swap.approved) {
       const item1 = await Item.findById(swap.item1);
       const item2 = await Item.findById(swap.item2);
