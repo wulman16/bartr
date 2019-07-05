@@ -84,6 +84,37 @@ router.get(`/:id`, auth, async (req, res) => {
   }
 });
 
+// @route     PATCH api/items/:id
+// @desc      Update your own item by id
+// @access    Private
+router.patch(`/:id`, auth, async (req, res) => {
+  const updates = Object.keys(req.body);
+  const allowedUpdates = [`name`, `description`, `category`];
+  const isValidOperation = updates.every(update => {
+    return allowedUpdates.includes(update);
+  });
+
+  if (!isValidOperation) {
+    return res.status(400).json({ msg: `Invalid updates!` });
+  }
+
+  try {
+    const item = await Item.findById(req.params.id);
+    if (!item) {
+      return res.status(404).json({ msg: `Item not found!` });
+    }
+    updates.forEach(update => (item[update] = req.body[update]));
+    await item.save();
+    res.json(item);
+  } catch (e) {
+    console.error(e.message);
+    if (e.kind === `ObjectId`) {
+      return res.status(404).json({ msg: `Item not found!` });
+    }
+    res.status(500).send(`Server error!`);
+  }
+});
+
 // @route     DELETE api/items/:id
 // @desc      Delete item by id
 // @access    Private
