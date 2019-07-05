@@ -73,8 +73,12 @@ router.post(
 router.get(`/`, auth, async (req, res) => {
   try {
     let swaps = await Swap.find().sort({ date: -1 });
-    swaps = swaps.filter(swap => swap.item1.toString() === req.user.id);
-    res.json(items);
+    swaps = swaps.filter(
+      swap =>
+        swap.item1User.toString() === req.user.id ||
+        swap.item2User.toString() === req.user.id
+    );
+    res.json(swaps);
   } catch (e) {
     console.error(e.message);
     res.status(500).send(`Server error!`);
