@@ -38,13 +38,14 @@ router.post(
       }
 
       // Check for items already in a pending swap
-      const swaps = [];
-      swaps.push(await Swap.find({ item1: req.body.item1 }));
-      swaps.push(await Swap.find({ item2: req.body.item1 }));
-      swaps.push(await Swap.find({ item1: req.body.item2 }));
-      swaps.push(await Swap.find({ item2: req.body.item2 }));
+      const swaps = await Swap.find({ pending: true });
       for (let swap of swaps) {
-        if (swap.length) {
+        if (
+          swap.item1.toString() === req.body.item1 ||
+          swap.item2.toString() === req.body.item1 ||
+          swap.item1.toString() === req.body.item2 ||
+          swap.item1.toString() === req.body.item2
+        ) {
           return res
             .status(400)
             .json({ msg: `Cannot swap items already in a pending swap!` });
@@ -113,7 +114,7 @@ router.patch(`/:id`, auth, async (req, res) => {
     if (swap.item1User.toString() !== req.user.id) {
       return res.status(401).json({ msg: `User not authorized!` });
     }
-    if (swap.approved || swap.rejected) {
+    if (!swap.pending) {
       return res.status(401).json({ msg: `Swap is already closed!` });
     }
     updates.forEach(update => (swap[update] = req.body[update]));
@@ -122,8 +123,38 @@ router.patch(`/:id`, auth, async (req, res) => {
       swap.item1User = swap.item2User;
       swap.item2User = item1User;
     }
+    swap.pending = false;
     await swap.save();
     res.json(swap);
+  } catch (e) {
+    console.error(e.message);
+    if (e.kind === `ObjectId`) {
+      return res.status(404).json({ msg: `Swap not found!` });
+    }
+    res.status(500).send(`Server error!`);
+  }
+});
+
+// @route     DELETE api/swaps/:id
+// @desc      Cancel a swap that logged-in user initiated
+// @access    Private
+router.delete(`/:id`, auth, async (req, res) => {
+  try {
+    const swap = await Swap.findById(req.params.id);
+    if (!swap) {
+      return res.status(404).json({ msg: `Item not found!` });
+    }
+
+    if (swap.pending) {
+      return res.status(401).json({ msg: `Cannot delete completed swap!` });
+    }
+
+    if (swap.item2User.toString() !== req.user.id) {
+      return res.status(401).json({ msg: `User not authorized` });
+    }
+
+    await swap.remove();
+    res.json({ msg: `Swap removed!` });
   } catch (e) {
     console.error(e.message);
     if (e.kind === `ObjectId`) {

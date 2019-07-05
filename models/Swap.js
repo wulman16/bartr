@@ -18,6 +18,10 @@ const SwapSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: `users`
   },
+  pending: {
+    type: Boolean,
+    default: true
+  },
   approved: {
     type: Boolean,
     default: false
