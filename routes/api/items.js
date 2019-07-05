@@ -103,6 +103,9 @@ router.patch(`/:id`, auth, async (req, res) => {
     if (!item) {
       return res.status(404).json({ msg: `Item not found!` });
     }
+    if (item.user.toString() !== req.user.id) {
+      return res.status(401).json({ msg: `User not authorized` });
+    }
     updates.forEach(update => (item[update] = req.body[update]));
     await item.save();
     res.json(item);
