@@ -7,6 +7,7 @@ const jwt = require(`jsonwebtoken`);
 const config = require(`config`);
 const { check, validationResult } = require(`express-validator`);
 const User = require(`../../models/User`);
+const Item = require(`../../models/Item`);
 
 // @route     POST api/users
 // @desc      Register user
@@ -95,7 +96,8 @@ router.get(`/me`, auth, async (req, res) => {
     if (!user) {
       return res.status(400).json({ msg: `User cannot be found!` });
     }
-    res.json(user);
+    const items = await Item.find({ user: req.user.id });
+    res.json([user, items]);
   } catch (e) {
     console.error(e.message);
     res.status(500).send(`Server error!`);
