@@ -145,7 +145,7 @@ router.delete(`/:id`, auth, async (req, res) => {
       return res.status(404).json({ msg: `Item not found!` });
     }
 
-    if (swap.pending) {
+    if (!swap.pending) {
       return res.status(401).json({ msg: `Cannot delete completed swap!` });
     }
 
