@@ -68,6 +68,8 @@ router.get(`/`, auth, async (req, res) => {
 // @desc      Get item by id
 // @access    Private
 router.get(`/:id`, auth, async (req, res) => {
+  // TODO: send info about whether item is in a pending swap,
+  // so users can't try to institute a new swap with it
   try {
     const item = await Item.findById(req.params.id);
     if (!item) {
