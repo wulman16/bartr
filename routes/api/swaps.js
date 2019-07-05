@@ -85,4 +85,52 @@ router.get(`/`, auth, async (req, res) => {
   }
 });
 
+// @route     PATCH api/swaps/:id
+// @desc      Accept or reject a swap by id
+// @access    Private
+router.patch(`/:id`, auth, async (req, res) => {
+  const updates = Object.keys(req.body);
+  const allowedUpdates = [`approved`, `rejected`];
+  const isValidOperation = updates.every(update => {
+    return allowedUpdates.includes(update);
+  });
+
+  if (!isValidOperation) {
+    return res.status(400).json({ msg: `Invalid updates!` });
+  }
+
+  if (updates.length > 1) {
+    return res
+      .status(400)
+      .json({ msg: `Cannot accept and reject the same swap!` });
+  }
+
+  try {
+    const swap = await Swap.findById(req.params.id);
+    if (!swap) {
+      return res.status(404).json({ msg: `Item not found!` });
+    }
+    if (swap.item1User.toString() !== req.user.id) {
+      return res.status(401).json({ msg: `User not authorized!` });
+    }
+    if (swap.approved || swap.rejected) {
+      return res.status(401).json({ msg: `Swap is already closed!` });
+    }
+    updates.forEach(update => (swap[update] = req.body[update]));
+    if (swap.approved) {
+      const item1User = swap.item1User;
+      swap.item1User = swap.item2User;
+      swap.item2User = item1User;
+    }
+    await swap.save();
+    res.json(swap);
+  } catch (e) {
+    console.error(e.message);
+    if (e.kind === `ObjectId`) {
+      return res.status(404).json({ msg: `Swap not found!` });
+    }
+    res.status(500).send(`Server error!`);
+  }
+});
+
 module.exports = router;
