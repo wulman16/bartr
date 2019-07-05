@@ -119,7 +119,7 @@ router.get(`/`, auth, async (req, res) => {
 
 // @route     GET api/users/:id
 // @desc      Get profile by user id
-// @access    Public
+// @access    Private
 router.get(`/:id`, auth, async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select(
@@ -128,7 +128,8 @@ router.get(`/:id`, auth, async (req, res) => {
     if (!user) {
       return res.status(400).json({ msg: `User cannot be found!` });
     }
-    res.json(user);
+    const items = await Item.find({ user: req.params.id });
+    res.json([user, items]);
   } catch (e) {
     console.error(e.message);
     if (e.kind === `ObjectId`) {
