@@ -119,9 +119,22 @@ router.patch(`/:id`, auth, async (req, res) => {
     }
     updates.forEach(update => (swap[update] = req.body[update]));
     if (swap.approved) {
-      const item1User = swap.item1User;
-      swap.item1User = swap.item2User;
-      swap.item2User = item1User;
+      const item1 = await Item.findById(swap.item1);
+      const item2 = await Item.findById(swap.item2);
+
+      const item1User = item1.user;
+      item1.user = item2.user;
+      item2.user = item1User;
+
+      const item1OwnerName = item1.ownerName;
+      const item1Location = item1.location;
+      item1.ownerName = item2.ownerName;
+      item1.location = item2.location;
+      item2.ownerName = item1OwnerName;
+      item2.location = item1Location;
+
+      await item1.save();
+      await item2.save();
     }
     swap.pending = false;
     await swap.save();
