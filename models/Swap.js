@@ -10,6 +10,14 @@ const SwapSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: `items`
   },
+  item1User: {
+    type: Schema.Types.ObjectId,
+    ref: `users`
+  },
+  item2User: {
+    type: Schema.Types.ObjectId,
+    ref: `users`
+  },
   approved: {
     type: Boolean,
     default: false

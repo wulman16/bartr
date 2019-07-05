@@ -28,15 +28,34 @@ router.post(
     }
 
     try {
+      // Check that item2 is owned by logged-in user
+      const item1 = await Item.findById(req.body.item1);
       const item2 = await Item.findById(req.body.item2);
       if (item2.user.toString() !== req.user.id) {
         return res
           .status(400)
           .json({ msg: `Item 2 does not belong to current user!` });
       }
+
+      // Check for items already in a pending swap
+      const swaps = [];
+      swaps.push(await Swap.find({ item1: req.body.item1 }));
+      swaps.push(await Swap.find({ item2: req.body.item1 }));
+      swaps.push(await Swap.find({ item1: req.body.item2 }));
+      swaps.push(await Swap.find({ item2: req.body.item2 }));
+      for (let swap of swaps) {
+        if (swap.length) {
+          return res
+            .status(400)
+            .json({ msg: `Cannot swap items already in a pending swap!` });
+        }
+      }
+
       const newSwap = await new Swap({
         item1: req.body.item1,
-        item2: req.body.item2
+        item2: req.body.item2,
+        item1User: item1.user,
+        item2User: item2.user
       });
 
       const swap = await newSwap.save();
@@ -47,5 +66,19 @@ router.post(
     }
   }
 );
+
+// @route     GET api/swaps
+// @desc      Get your swap history
+// @access    Private
+router.get(`/`, auth, async (req, res) => {
+  try {
+    let swaps = await Swap.find().sort({ date: -1 });
+    swaps = swaps.filter(swap => swap.item1.toString() === req.user.id);
+    res.json(items);
+  } catch (e) {
+    console.error(e.message);
+    res.status(500).send(`Server error!`);
+  }
+});
 
 module.exports = router;
