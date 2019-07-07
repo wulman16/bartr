@@ -106,7 +106,7 @@ router.get(`/me`, auth, async (req, res) => {
 
 // @route     GET api/users
 // @desc      Get all profiles
-// @access    Public
+// @access    Private
 router.get(`/`, auth, async (req, res) => {
   try {
     const users = await User.find().select(`name avatar location`);
